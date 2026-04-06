@@ -1,0 +1,505 @@
+
+
+\documentclass[a4paper,12pt]{extarticle}
+\usepackage{geometry}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[main=english,russian]{babel}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{fancyhdr}
+\usepackage{setspace}
+\usepackage{graphicx}
+\usepackage{colortbl}
+\usepackage{tikz}
+\usepackage{pgf}
+\usepackage{subcaption}
+\usepackage{listings}
+\usepackage{indentfirst}
+\usepackage{microtype}
+\usepackage[
+backend=biber,
+style=numeric,
+urldate=long,
+maxbibnames=99
+]{biblatex}
+\addbibresource{references.bib}
+\usepackage[colorlinks,citecolor=blue,linkcolor=blue,bookmarks=false,hypertexnames=true, urlcolor=blue]{hyperref} 
+\usepackage{indentfirst}
+\usepackage{mathtools}
+\usepackage{booktabs}
+\usepackage[flushleft]{threeparttable}
+\usepackage{tablefootnote}
+
+\usepackage{chngcntr} % нумерация графиков и таблиц по секциям
+\counterwithin{table}{section}
+\counterwithin{figure}{section}
+
+\graphicspath{{graphics/}}%путь к рисункам
+
+\makeatletter
+% \renewcommand{\@biblabel}[1]{#1.} % Заменяем библиографию с квадратных скобок на точку:
+\makeatother
+
+\geometry{left=2.5cm}% левое поле
+\geometry{right=1.0cm}% правое поле
+\geometry{top=2.0cm}% верхнее поле
+\geometry{bottom=2.0cm}% нижнее поле
+\setlength{\parindent}{1.25cm}
+\renewcommand{\baselinestretch}{1.5} % междустрочный интервал
+
+
+\newcommand{\bibref}[3]{\hyperlink{#1}{#2 (#3)}} % biblabel, authors, year
+
+\renewcommand{\theenumi}{\arabic{enumi}}% Меняем везде перечисления на цифра.цифра
+\renewcommand{\labelenumi}{\arabic{enumi}}% Меняем везде перечисления на цифра.цифра
+\renewcommand{\theenumii}{.\arabic{enumii}}% Меняем везде перечисления на цифра.цифра
+\renewcommand{\labelenumii}{\arabic{enumi}.\arabic{enumii}.}% Меняем везде перечисления на цифра.цифра
+\renewcommand{\theenumiii}{.\arabic{enumiii}}% Меняем везде перечисления на цифра.цифра
+\renewcommand{\labelenumiii}{\arabic{enumi}.\arabic{enumii}.\arabic{enumiii}.}% Меняем везде перечисления на цифра.цифра
+
+% -------------------- DOCUMENT --------------------
+\begin{document}
+
+% ---------- TITLE PAGE ----------
+\input{titlepage}
+\newpage
+
+% ---------- CONTENTS ----------
+\tableofcontents
+\newpage
+
+% ---------- ABSTRACT ---------
+
+
+\begin{abstract}
+This project is aimed at developing a web-based educational platform for adaptive homework assignment and student progress tracking. The idea of the system is to combine a clear web application architecture with a simple adaptive mechanism that can later be extended by more advanced machine learning models.
+
+At the current checkpoint (about 60\% completion), the project is no longer limited to a backend prototype. The backend part is implemented with FastAPI and includes registration and authentication, role separation for students and teachers, a relational data model, homework management, submission processing, and progress tracking. In addition to this, a frontend MVP has been developed. It covers the main user scenarios from both sides: a teacher can create a homework, fill it with several items, and assign it to students, while a student can work either in the homework mode or in the self-education mode.
+
+The adaptive logic is currently based on a rule-based \textit{skill\_score} model. In the self-education mode, the system recommends tasks of suitable difficulty and updates the learner state after each submission. The current version already provides a coherent end-to-end demo through both the web interface and documented API endpoints in OpenAPI (Swagger). Further work will focus on stronger personalization, extended analytics, and final testing.
+\end{abstract}
+  
+
+\begin{otherlanguage}{russian}
+\section*{Аннотация}
+Данный проект посвящён разработке веб-платформы для адаптивного назначения домашних заданий и отслеживания прогресса студентов. Мы рассматриваем систему не только как набор ML-идей, но и как полноценное web-приложение с понятной архитектурой, ролями пользователей и отдельными пользовательскими сценариями.
+
+На текущем этапе проект достиг примерно 60\% готовности и уже не сводится только к серверному прототипу. Backend реализован на FastAPI и включает регистрацию и аутентификацию пользователей, разграничение ролей student и teacher, реляционную модель данных, работу с домашними заданиями, обработку отправок и получение данных о прогрессе. Также разработан frontend MVP. В нём преподаватель может создавать домашние задания, наполнять их упражнениями и назначать студентам, а студент --- работать либо с назначенными homework, либо в режиме self-education.
+
+Адаптивная логика пока остаётся rule-based и основана на модели skill\_score. В режиме self-education система подбирает задания подходящей сложности и обновляет состояние обучающегося после каждой попытки. Текущая версия уже позволяет показать сквозной сценарий работы как через веб-интерфейс, так и через документированные API-эндпоинты OpenAPI/Swagger. На следующем этапе планируется усиление персонализации, расширение аналитики и финальное тестирование системы.
+\end{otherlanguage}
+
+\newpage
+
+% ---------- KEYWORDS ----------
+\section*{Keywords}
+\addcontentsline{toc}{section}{Keywords}
+
+\begin{itemize}
+    \item Adaptive learning
+    \item Educational data mining
+    \item Web-based educational systems
+    \item Personalized homework assignment
+    \item Student progress analytics
+\end{itemize}
+
+
+% ---------- INTRODUCTION ----------
+\section{Introduction}
+
+The rapid development of digital educational platforms has led to a significant increase in the volume of educational content and the number of learners with heterogeneous levels of preparation. In this context, one of the key challenges of modern educational technologies is the personalization of the learning process in order to account for individual differences in knowledge, learning pace, and cognitive characteristics of students. Traditional approaches to content delivery and task assignment often rely on static curricula and uniform difficulty levels, which may result in reduced learning efficiency and learner engagement.
+
+EdTech systems increasingly employ software solutions combined with data-driven methods to address these challenges. In particular, machine learning techniques enable the analysis of learner interaction data and the construction of adaptive models that can adjust educational content dynamically. At the same time, the practical applicability of such approaches strongly depends on the quality of the software architecture, scalability of the system, and transparency of the decision-making process for instructors and learners.
+
+Despite the availability of various adaptive learning platforms, many existing solutions either focus primarily on software implementation without sufficient analytical justification of adaptation mechanisms, or emphasize machine learning models without integrating them into a coherent and extensible software system. This creates a gap between theoretical adaptivity and its practical use in real educational settings.
+
+The present project aims to address this gap by developing an EdTech system that combines machine learning methods and software engineering principles for automated generation and personalization of educational tasks. The proposed system is intended to adapt task difficulty and content based on learner performance history, while maintaining a modular and extensible architecture suitable for further development and experimentation.
+
+This document presents the plan for the term project, including the problem statement, project objectives, overview of relevant literature, and a detailed plan of further work.
+
+\subsection{Problem Statement}
+
+The problem addressed in this project is the lack of flexible and well-justified mechanisms for automated personalization of educational tasks in existing EdTech platforms. Many systems rely on predefined rules or manually curated task sets, which limits their ability to adapt to individual learners in a scalable manner. Conversely, systems that employ machine learning techniques often operate as black boxes and are poorly integrated into software architectures that support transparency, extensibility, and practical deployment.
+
+As a result, there is a need for an integrated approach that combines adaptive machine learning models with a robust software system capable of generating, managing, and evaluating personalized educational tasks in an automated yet interpretable manner.
+
+\subsection{Project Goal and Objectives}
+
+The goal of this project is to design and develop a web-based EdTech application that integrates machine learning methods and software engineering solutions to enable automated generation and personalization of educational tasks.
+
+To achieve this goal, the following objectives are defined:
+\begin{itemize}
+    \item to analyze existing approaches to task personalization and adaptive learning in EdTech systems;
+    \item to design the architecture of a web application that supports modular integration of machine learning components;
+    \item to develop machine learning models for estimating learner proficiency and adapting task difficulty based on user interaction data;
+    \item to implement a web-based prototype that provides automated task generation and personalized recommendations for learners;
+    \item to evaluate the proposed web application using appropriate performance, usability, and quality metrics.
+\end{itemize}
+\subsection*{Current Implementation Status (Checkpoint 60\%)}
+
+At the current stage, the project can be described as an integrated MVP rather than a backend-only prototype. The implemented part already covers the main workflow of the system: homework creation, homework assignment, self-education practice, answer submission, and progress tracking.
+
+The following components are completed:
+
+\begin{itemize}
+    \item Backend architecture on FastAPI with modular routing, configuration, and database layers.
+    \item Relational data model including users, tasks, homeworks, homework items, homework assignments, submissions, and learner states.
+    \item Registration and authentication with role-based access control for student and teacher roles.
+    \item Teacher-side functionality for creating homeworks, filling them with items, and assigning them to students.
+    \item Student-side functionality for viewing assigned homeworks, submitting answers, and working in the self-education mode.
+    \item Baseline adaptive recommendation based on a learner skill score model.
+    \item Progress tracking, performance statistics, and teacher analytics endpoints.
+    \item Frontend MVP with separate pages and navigation flows for students and teachers.
+    \item API documentation via OpenAPI (Swagger) for testing and frontend integration.
+\end{itemize}
+
+At the same time, several parts are intentionally left for the next stage: more advanced personalization, richer analytics, and a more complete testing and evaluation pipeline.
+
+\section*{1.3 Expected Outcomes}
+
+The expected outcome of the project is the development of a functional prototype of an intelligent web-based educational system capable of generating personalized homework assignments and analyzing student progress.
+
+By the final stage of the project, the system is expected to include:
+
+\begin{itemize}
+    \item A fully functional web application with separate interfaces for students and teachers.
+    \item A structured database containing users, assignments, submission history, and learner state information.
+    \item An adaptive task recommendation mechanism that adjusts assignment difficulty based on student performance.
+    \item Automated or semi-automated evaluation of student submissions.
+    \item Visualization of learner progress and analytical reports for teachers.
+    \item Documented API endpoints supporting integration between backend and frontend components.
+\end{itemize}
+
+\subsection*{Intermediate Result (60\% Completion)}
+
+At the current checkpoint, the system already supports:
+
+\begin{itemize}
+    \item User registration and authentication with role-based access control.
+    \item Storage and management of tasks, homeworks, learner performance data, and submission history.
+    \item Homework creation and assignment on the teacher side.
+    \item A student homework flow with deadlines, statuses, and answer submission.
+    \item A separate self-education flow with subject and difficulty selection.
+    \item Adaptive task recommendation based on a skill score model.
+    \item Submission processing with automatic answer verification for test tasks.
+    \item Dynamic updating of learner skill levels.
+    \item Retrieval of student progress statistics.
+    \item Frontend pages for dashboards, homeworks, self-education, task bank, and analytics.
+    \item API documentation via OpenAPI (Swagger) for testing and integration.
+\end{itemize}
+
+In other words, the current result is a working MVP that can already be demonstrated, even though some advanced parts of the project are still under development.
+
+% ---------- BIBLIOGRAPHICAL OVERVIEW ----------
+
+\section{Overview of Bibliographical Sources}
+
+This section reviews key research works related to adaptive learning, machine learning-based personalization, and the development of web-based educational systems. Each selected source contributes to the theoretical or practical foundations of the proposed project.
+
+\subsection{Machine Learning-Based Adaptive Learning Systems}
+
+The study by Paracha and Ryan~\cite{adaptiveML2025} investigates the application of machine learning techniques in adaptive learning systems aimed at personalizing educational content. The authors demonstrate that data-driven adaptation of learning materials based on learner performance and interaction history can lead to improved learning outcomes and increased student engagement. This work provides empirical justification for incorporating machine learning models into the proposed web-based EdTech application and supports the feasibility of automated task personalization as a core system component.
+
+\subsection{Adaptive Educational Technologies and Personalization}
+
+The research presented in~\cite{adaptiveEdu2025} focuses on adaptive educational technologies in the context of personalized learning. The authors emphasize that adaptive systems are designed to complement, rather than replace, traditional instruction by adjusting content and task difficulty to individual learner needs. This work contributes a pedagogical perspective to the project and supports the design choice of integrating adaptive mechanisms within a software system intended for practical educational use.
+
+\subsection{Personalized Adaptive Learning in Higher Education}
+
+A comprehensive review of personalized adaptive learning in higher education is provided in~\cite{personalizedAdaptive2024}. The study synthesizes results from multiple empirical works and identifies key adaptive strategies, including performance-based task selection and dynamic difficulty adjustment. The conclusions of this review inform the selection of adaptation strategies for the proposed system and help define evaluation criteria for assessing the effectiveness of personalized task generation.
+
+\subsection{Deep Knowledge Tracing and Learner Modeling}
+
+The work presented in~\cite{deepKnowledge2025} explores deep knowledge tracing models based on neural networks for estimating learner knowledge states and cognitive load. By modeling temporal dependencies in learner interactions, such approaches enable more accurate proficiency estimation and personalized learning trajectories. The concepts introduced in this study serve as a methodological foundation for the machine learning components responsible for learner modeling in the proposed application.
+
+\subsection{Artificial Intelligence in Adaptive Education}
+
+The systematic review conducted in~\cite{AIadaptive2025} analyzes the role of artificial intelligence techniques in adaptive education systems. The authors highlight the potential of AI-driven personalization for real-time feedback, automated content adaptation, and scalable learner modeling, while also discussing challenges related to interpretability and system complexity. This work supports the integration of AI-based personalization into the system architecture and motivates the consideration of transparency and maintainability in the design of the web application.
+
+\subsection{Intelligent Tutoring Systems and Practical Constraints}
+
+The study described in~\cite{intelligentTutor2025} examines intelligent tutoring systems that employ machine learning and artificial intelligence to personalize learning experiences. In addition to technical aspects, the authors discuss practical constraints such as data privacy, algorithmic bias, and system accessibility. These considerations are relevant to the proposed project and inform design decisions related to ethical and practical aspects of deploying an ML-driven educational web application.
+
+In summary, the reviewed literature demonstrates both the effectiveness of machine learning-based personalization in education and the importance of robust software architectures for deploying such solutions in practice. The proposed project builds upon these findings by integrating adaptive machine learning models within a modular and extensible web-based EdTech system.
+
+\section{Analysis of Existing Software Solutions}
+
+This section provides an overview of existing software solutions addressing the problem of adaptive learning and personalized educational content. The analysis focuses on web-based educational platforms that incorporate elements of personalization, automation, or data-driven learning support.
+
+\subsection{Learning Management Systems with Limited Personalization}
+
+Traditional learning management systems (LMS) such as Moodle, Canvas, and Blackboard are widely used in educational institutions. These platforms provide tools for course organization, content delivery, and assessment management. However, personalization in such systems is typically limited to manually configured rules or static learning paths.
+
+While LMS platforms offer scalability and robust infrastructure, they generally lack fine-grained, data-driven adaptation of task difficulty and content based on individual learner behavior. As a result, personalization remains largely instructor-driven rather than automated.
+
+\subsection{Adaptive Learning Platforms}
+
+Several modern EdTech platforms focus specifically on adaptive learning. Examples include systems such as Smart Sparrow, ALEKS, and Knewton. These platforms employ predefined adaptation rules or proprietary algorithms to adjust content based on learner performance.
+
+Although these systems demonstrate the effectiveness of adaptive learning approaches, their internal algorithms are often unclear, and customization options for educators and developers are limited. In addition, many such platforms are designed as closed commercial solutions, which restricts experimentation with alternative machine learning models or personalization strategies.
+
+\subsection{Intelligent Tutoring Systems}
+
+Intelligent tutoring systems (ITS) represent a class of educational software that integrates artificial intelligence techniques to provide personalized guidance and feedback. These systems often rely on expert-defined knowledge models and, in some cases, machine learning-based learner modeling.
+
+Despite their strong personalization capabilities, intelligent tutoring systems are frequently domain-specific and complex to deploy in general-purpose educational settings. Their integration into scalable web-based environments may require significant engineering effort.
+
+\subsection{Task Generation and Practice-Oriented Platforms}
+
+Practice-oriented platforms such as Codeforces, LeetCode, and online quiz systems focus on large-scale task delivery and automated evaluation. Some of these systems provide basic difficulty adjustment or recommendation mechanisms.
+
+In many systems, tasks are selected using simple rules or user-chosen difficulty levels instead of continuously assessing learner proficiency. As a result, personalization is limited and does not fully follow individual learning progress.
+
+\subsection{Summary and Identified Limitations}
+
+The analysis of existing software solutions reveals several common limitations. Many platforms either prioritize scalability over personalization or employ rigid adaptation mechanisms that are difficult to extend or customize. Systems that provide advanced personalization often lack transparency or flexibility, while general-purpose platforms typically do not leverage machine learning models for learner modeling.
+
+The proposed project aims to address these limitations by combining a modular web-based architecture with machine learning-driven learner modeling and automated task personalization. This approach enables both flexibility in system design and data-driven adaptation, distinguishing the proposed solution from existing EdTech platforms.
+
+
+
+
+
+
+\section{Current Prototype Implementation}
+
+At the current stage (around 60\% completion), the project already includes both a substantial backend part and a frontend MVP. The prototype is built around two main student scenarios: assigned homeworks and self-education. On the teacher side, the system already supports creation of reusable tasks, homework assembly, and assignment management. Because of this, the current version can be demonstrated not only through API requests, but also as a working web application.
+
+\subsection{Backend Architecture}
+
+The backend is implemented using FastAPI and follows a modular structure. API routes, ORM models, schemas, configuration, and database access logic are separated into different components. For development, the project uses SQLite together with SQLAlchemy ORM. This setup is simple enough for rapid prototyping and at the same time keeps the project structure ready for further extension.
+
+All main endpoints are documented through OpenAPI (Swagger), which made frontend integration and manual testing noticeably easier during development.
+
+\subsection{User Management and Role-Based Access Control}
+
+The system supports two user roles: student and teacher. Authentication is implemented through JWT tokens. After a successful login, a user receives an access token that is used for protected API routes. Passwords are stored in hashed form.
+
+Role-based access control is used in a straightforward way: students can open their own homeworks, solve tasks, and view their own progress, while teachers can create educational content, assign homeworks, and inspect student analytics.
+
+\subsection{Data Model and Core Entities}
+
+Compared to the earlier backend-only version, the data model has become more complete.
+
+The \textit{User} entity stores account data and role information. The \textit{Task} entity is used mainly as a reusable unit for self-education and task banking. For the homework flow, separate entities are introduced: \textit{Homework}, \textit{HomeworkItem}, and \textit{HomeworkAssignment}. This makes it possible to create one homework consisting of several items and assign it to specific students. Student answers are stored in \textit{Submission} and \textit{HomeworkSubmission} tables, while \textit{LearnerState} keeps the current \textit{skill\_score}.
+
+This structure turned out to be more suitable for the actual idea of the project, because teacher-assigned homework and self-education are now represented separately instead of being mixed into one flow.
+
+\subsection{Adaptive Recommendation Mechanism}
+
+A baseline adaptive mechanism has been implemented on top of a learner skill score ranging from 0 to 100. At the current moment, this mechanism is used in the self-education mode. Depending on the current score, the system selects tasks of a suitable difficulty level. The student can also additionally choose a subject and a target difficulty level.
+
+This logic is still rule-based, but it already gives the project a clear adaptive component and is enough for demonstration of the main idea.
+
+\subsection{Submission Processing and Skill Update}
+
+When a student submits an answer in the self-education mode, the system performs automatic verification for test tasks with predefined answer keys. The result affects the learner's current score. For homework items, the platform supports both auto-graded and manual-review logic. This is important because not every educational task can be checked in a fully automatic way.
+
+After validation, the learner's \textit{skill\_score} is updated according to correctness and task difficulty. The score is kept within fixed bounds so that the baseline model remains stable. All submissions are stored in the database, which later can be used both for analytics and for training more advanced models.
+
+\subsection{Progress Tracking and Analytics}
+
+The backend provides access to individual progress metrics such as current \textit{skill\_score}, total number of attempts, number of correct submissions, accuracy, and recent submission history. Separate teacher endpoints allow viewing summaries for students and loading detailed progress for a selected learner.
+
+\subsection{Frontend MVP}
+
+The frontend is implemented as a React single-page application. It has separate navigation flows for students and teachers. For students, the main pages are dashboard, homeworks, homework detail, self-education, and progress. For teachers, the main pages are dashboard, homeworks, task bank, and student analytics.
+
+One practical decision that helped during development was to separate two student modes explicitly. Homework is now treated as assigned work with a deadline and status, while self-education is treated as a free practice mode in which the student chooses parameters and receives automatically checked tasks. This makes the user flow clearer and closer to the original idea of the project.
+
+The frontend is connected to the backend API. At the same time, a fallback demo mode is supported for situations when some endpoint is temporarily unavailable. This was added mainly to keep the interface demonstrable during active development.
+
+\subsection{Demonstration Workflow}
+
+The implemented prototype supports the following end-to-end workflow:
+
+\begin{enumerate}
+    \item A teacher logs into the system and creates a homework.
+    \item The teacher adds several items to this homework and assigns it to one or more students.
+    \item A student logs in and sees assigned homeworks on a separate page.
+    \item The student opens a homework or switches to the self-education mode.
+    \item In self-education, the system recommends a task according to the current learner state and selected parameters.
+    \item After the answer is submitted, the system stores the submission and updates the learner score.
+    \item The updated progress can be viewed by the student and by the teacher through analytics pages and API endpoints.
+\end{enumerate}
+
+This workflow shows that the current version already covers the main practical scenarios of the planned system and can be used as a solid base for the final stage of the project.
+% ---------- PLAN OF FURTHER WORK ----------
+\section{Plan of Further Work}
+
+This section presents a detailed plan of further work for the diploma project. The project is implemented by a team of two participants and covers the full development cycle of a web-based adaptive educational system, including problem analysis, requirement specification, system design, implementation, integration, and experimental evaluation. The plan spans from November to May and includes explicit distribution of responsibilities between the participants.
+
+\subsection{Stage 1: Problem Analysis and Conceptual Framework Formation}
+\textbf{Timeframe: November 10 -- December 10}
+
+At the first stage, the project team focuses on gaining a thorough understanding of the problem domain and reviewing existing adaptive educational technologies. The work begins with a literature review of adaptive learning systems, personalized learning strategies, and machine learning methods applicable in education. Next, the architectures of current web-based educational platforms are examined to identify strengths, weaknesses, and common design patterns. Based on this analysis, the conceptual boundaries and overall scope of the proposed system are defined. Additionally, typical learning scenarios are analyzed to determine user roles, such as learners and instructors, and to outline potential interaction patterns. System constraints, including technical, pedagogical, and usability requirements, are also identified to guide further development.  
+
+\textbf{Key activities:}
+\begin{enumerate}
+    \item Conduct a literature review on adaptive learning approaches and personalized education.
+    \item Examine existing web-based educational platforms to identify design patterns and limitations.
+    \item Define the scope, goals, and conceptual boundaries of the system.
+    \item Analyze typical learning scenarios, user roles, and interaction patterns.
+    \item Identify system constraints to inform subsequent design and development stages.
+\end{enumerate}
+
+\textbf{Expected outputs:} clear problem definition, initial conceptual diagrams, and a list of identified system constraints.
+
+\textbf{Responsibilities:} 
+\begin{itemize}
+    \item \textbf{Anastasiya Smirnova:} analysis of machine learning methods for learner modeling and personalization; identification of backend requirements and adaptive logic.
+    \item \textbf{Andrey Bobua:} analysis of frontend solutions, user interaction patterns, and data storage approaches.
+\end{itemize}
+
+\subsection{Stage 2: Requirement Specification and Use Case Modeling}
+\textbf{Timeframe: December 11 -- December 25}
+
+In the second stage, the conceptual understanding gained previously is translated into concrete system requirements. Functional requirements are defined to cover key system interactions, including task assignment, progress tracking, adaptive feedback, and performance evaluation. Non-functional requirements, such as system performance, scalability, usability, and security, are also formalized. Detailed use cases are created to illustrate expected behavior of learners and instructors in different scenarios. Additionally, data flows between components are specified to ensure consistency in system interactions and to facilitate later integration.
+
+\textbf{Key activities:}
+\begin{enumerate}
+    \item Define functional requirements covering all key user interactions.
+    \item Specify non-functional requirements, including performance, scalability, usability, and security.
+    \item Develop detailed use case diagrams for both learners and instructors.
+    \item Map data flows and interactions between system components.
+    \item Document potential constraints related to data availability and system scalability.
+\end{enumerate}
+
+\textbf{Expected outputs:} detailed requirement specification, use case diagrams, and interaction flowcharts.
+
+\textbf{Responsibilities:}
+\begin{itemize}
+    \item \textbf{Anastasiya Smirnova:} formulation of backend functionality, API behavior, and personalization mechanisms.
+    \item \textbf{Andrey Bobua:} formulation of frontend requirements, interaction flows, and database structure.
+\end{itemize}
+
+\subsection{Stage 3: Data Modeling and Preparation Strategy}
+\textbf{Timeframe: December 26 -- January 20}
+
+During this stage, the data architecture of the system is defined. The team identifies all required data types, including learner interaction logs, task metadata, assessment results, and temporal information. Preprocessing pipelines are designed to handle missing values, normalize data, and extract relevant features suitable for machine learning. Database tables are mapped and optimized to support efficient queries. Feature sets for modeling are defined, and preprocessing procedures are documented, ensuring the data is ready for training models and conducting experiments.
+
+\textbf{Key activities:}
+\begin{enumerate}
+    \item Identify required data types and their structures for system functionality and machine learning.
+    \item Design preprocessing pipelines for cleaning, normalization, and feature extraction.
+    \item Map database tables and optimize schema for efficient data access.
+    \item Define feature sets for machine learning models.
+    \item Document preprocessing and data handling procedures for reproducibility.
+\end{enumerate}
+
+\textbf{Expected outputs:} formal data schema, preprocessing documentation, and defined feature sets.
+
+\textbf{Responsibilities:}
+\begin{itemize}
+    \item \textbf{Anastasiya Smirnova:} design of feature representations, preprocessing pipelines, and data interfaces for machine learning models.
+    \item \textbf{Andrey Bobua:} design of database schema, storage formats, and access mechanisms.
+\end{itemize}
+
+\subsection*{Stage 4: System Architecture Design (Completed)}
+
+At this stage, the overall system architecture was designed and partially implemented. The backend was structured according to a modular design separating API routes, data models, database access logic, configuration management, and security components. 
+
+The architectural decisions ensured scalability and extensibility of the system, allowing future integration of advanced personalization algorithms and frontend components. The RESTful API structure was defined, and role-based access control mechanisms were incorporated into the design.
+
+This stage has been successfully completed, as the backend architecture is fully operational and documented.
+
+\subsection*{Stage 5: Development of Learner Modeling and Personalization Algorithms (Partially Completed)}
+
+The development of the learner modeling mechanism has been initiated and a baseline adaptive model has been implemented. The current system includes a learner skill score ranging from 0 to 100, which is dynamically updated based on submission correctness and task difficulty.
+
+The adaptive recommendation logic selects tasks according to predefined difficulty intervals derived from the learner’s current skill score. This rule-based approach provides functional personalization and demonstrates the feasibility of adaptive assignment generation.
+
+Further work in this stage will focus on enhancing the personalization mechanism, potentially incorporating more advanced data-driven or machine learning-based models.
+
+\subsection*{Stage 6: Implementation of the Web Application Prototype (In Progress)}
+
+At the current moment, this stage has moved beyond the initial frontend development phase. The project already includes a connected frontend MVP and a substantial backend implementation that supports the main educational scenarios.
+
+The implemented version already contains student and teacher dashboards, homework pages, self-education mode, task bank, and analytics pages. The next steps in this stage are mostly related to polishing, better validation, more complete review workflows for manually checked tasks, and improvement of the user experience.
+
+Thus, this stage should now be considered partially completed at the MVP level, with further work focused on refinement rather than initial implementation.
+
+\textbf{Expected outputs:} working web application prototype demonstrating main user scenarios.
+
+\textbf{Responsibilities:}
+\begin{itemize}
+    \item \textbf{Anastasiya Smirnova:} backend development, machine learning integration, adaptive logic implementation.
+    \item \textbf{Andrey Bobua:} frontend development, UI logic, database integration.
+\end{itemize}
+
+\subsection{Stage 7: System Integration and Testing}
+\textbf{Timeframe: April 11 -- April 25}
+
+At this stage, all system components are integrated into a single working system. Functional testing is conducted to verify task assignment, data flows, and personalization mechanisms. Performance and usability testing ensures the system meets non-functional requirements. Bugs and inconsistencies are identified and resolved, resulting in a stable system ready for evaluation.
+
+\textbf{Key activities:}
+\begin{enumerate}
+    \item Integrate all components into a unified system.
+    \item Conduct functional testing for task assignment and personalization.
+    \item Perform performance and usability testing.
+    \item Identify and fix bugs and inconsistencies.
+    \item Ensure system stability and readiness for experimental evaluation.
+\end{enumerate}
+
+\textbf{Expected outputs:} fully integrated and tested system ready for evaluation.
+
+\textbf{Responsibilities:}
+\begin{itemize}
+    \item \textbf{Anastasiya Smirnova:} backend services, adaptive logic, ML integration testing.
+    \item \textbf{Andrey Bobua:} frontend functionality, database consistency, and UI testing.
+\end{itemize}
+
+\subsection{Stage 8: Experimental Evaluation and Analysis}
+\textbf{Timeframe: April 26 -- May 10}
+
+During this stage, the system is evaluated through predefined experiments. The focus is on measuring the accuracy of learner modeling, the effectiveness of adaptive task assignment, system performance, and usability. Both quantitative and qualitative results are collected, analyzed, and documented to provide a comprehensive assessment of the system.
+
+\textbf{Key activities:}
+\begin{enumerate}
+    \item Conduct experiments to evaluate learner modeling accuracy.
+    \item Assess effectiveness of adaptive task assignment.
+    \item Evaluate system performance and frontend usability.
+    \item Collect quantitative and qualitative data for analysis.
+    \item Prepare visualizations and documentation of results.
+\end{enumerate}
+
+\textbf{Expected outputs:} evaluation reports, analysis of system effectiveness, visualizations of experimental results.
+
+\textbf{Responsibilities:}
+\begin{itemize}
+    \item \textbf{Anastasiya Smirnova:} evaluation of ML models and personalization mechanisms.
+    \item \textbf{Andrey Bobua:} evaluation of system performance, frontend usability, database consistency, and preparation of visualizations.
+\end{itemize}
+
+\subsection{Stage 9: Finalization and Report Preparation}
+\textbf{Timeframe: May 11 -- May 25}
+
+The final stage involves completing all remaining development tasks, finalizing the functional prototype, and preparing the diploma report. The report documents the system architecture, implementation details, machine learning methods, evaluation results, and conclusions. Proper formatting and compilation of all materials are carried out to prepare the work for submission and demonstration.
+
+\textbf{Key activities:}
+\begin{enumerate}
+    \item Finalize all system components and ensure correct operation.
+    \item Prepare the functional prototype for demonstration.
+    \item Compile and format the final report including architecture, implementation, ML methods, and evaluation results.
+    \item Review and edit report content for clarity and completeness.
+    \item Submit the completed project for evaluation.
+\end{enumerate}
+
+\textbf{Expected outputs:} completed functional prototype and final diploma report.
+
+\textbf{Responsibilities:}
+\begin{itemize}
+    \item \textbf{Anastasiya Smirnova:} documentation of backend implementation, machine learning methods, and experimental analysis.
+    \item \textbf{Andrey Bobua:} documentation of frontend implementation, database design, and final formatting of the report.
+\end{itemize}
+
+
+
+% ---------- BIBLIOGRAPHY ----------
+\newpage
+\printbibliography
+\addcontentsline{toc}{section}{Bibliography}
+
+\end{document}
