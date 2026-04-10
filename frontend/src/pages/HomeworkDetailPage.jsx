@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
 import Loader from "../components/Loader";
@@ -8,13 +8,11 @@ export default function HomeworkDetailPage() {
   const { assignmentId } = useParams();
   const { evaluateHomeworkItem, loading, openHomeworkDetail, studentSnapshot } = useAppContext();
   const [answers, setAnswers] = useState({});
-  const onLoad = useEffectEvent(() => {
-    openHomeworkDetail(Number(assignmentId));
-  });
 
   useEffect(() => {
-    onLoad();
-  }, [onLoad]);
+    openHomeworkDetail(Number(assignmentId));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assignmentId]);
 
   const homework = studentSnapshot.selectedHomework;
   if (loading.homework && !homework) {

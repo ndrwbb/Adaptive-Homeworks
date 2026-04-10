@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useState } from "react";
+import { useEffect, useState } from "react";
 
 import Loader from "../components/Loader";
 import { useAppContext } from "../context/AppContext";
@@ -27,13 +27,11 @@ export default function TeacherHomeworksPage() {
   const [showComposer, setShowComposer] = useState(false);
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState("");
-  const onLoad = useEffectEvent(() => {
-    loadTeacherHomeworks();
-  });
 
   useEffect(() => {
-    onLoad();
-  }, [onLoad]);
+    loadTeacherHomeworks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (loading.teacher && teacherSnapshot.homeworks.length === 0) {
     return <Loader label="Loading teacher homeworks..." />;

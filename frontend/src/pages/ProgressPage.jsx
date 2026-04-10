@@ -1,17 +1,15 @@
-import { useEffect, useEffectEvent } from "react";
+import { useEffect } from "react";
 
 import Loader from "../components/Loader";
 import { useAppContext } from "../context/AppContext";
 
 export default function ProgressPage() {
   const { loadStudentProgress, loading, studentSnapshot } = useAppContext();
-  const onLoad = useEffectEvent(() => {
-    loadStudentProgress();
-  });
 
   useEffect(() => {
-    onLoad();
-  }, [onLoad]);
+    loadStudentProgress();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (loading.student && !studentSnapshot.progress) {
     return <Loader label="Loading progress analytics..." />;

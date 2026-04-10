@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent } from "react";
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 
 import Loader from "../components/Loader";
@@ -7,13 +7,10 @@ import { getHomeworkCardStatus } from "../lib/homeworks";
 
 export default function HomeworksPage() {
   const { loadStudentHomeworks, loading, studentSnapshot } = useAppContext();
-  const onLoad = useEffectEvent(() => {
-    loadStudentHomeworks();
-  });
-
   useEffect(() => {
-    onLoad();
-  }, [onLoad]);
+    loadStudentHomeworks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (loading.homework && studentSnapshot.homeworks.length === 0) {
     return <Loader label="Loading homeworks..." />;

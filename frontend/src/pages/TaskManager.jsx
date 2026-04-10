@@ -1,4 +1,4 @@
-import { startTransition, useEffect, useEffectEvent, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 
 import Loader from "../components/Loader";
 import { useAppContext } from "../context/AppContext";
@@ -15,13 +15,11 @@ export default function TaskManager() {
   const { createTask, loadTeacherDashboard, loading, teacherSnapshot } = useAppContext();
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState("");
-  const onLoad = useEffectEvent(() => {
-    loadTeacherDashboard();
-  });
 
   useEffect(() => {
-    onLoad();
-  }, [onLoad]);
+    loadTeacherDashboard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleSubmit(event) {
     event.preventDefault();

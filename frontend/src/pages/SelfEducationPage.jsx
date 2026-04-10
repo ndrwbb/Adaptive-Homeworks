@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useState } from "react";
+import { useEffect, useState } from "react";
 
 import Loader from "../components/Loader";
 import { useAppContext } from "../context/AppContext";
@@ -7,27 +7,26 @@ export default function SelfEducationPage() {
   const { evaluatePracticeSubmission, loadPracticeTask, loading, studentSnapshot } = useAppContext();
   const [answer, setAnswer] = useState("");
   const [filters, setFilters] = useState(studentSnapshot.practiceFilters);
-  const onLoad = useEffectEvent(() => {
-    loadPracticeTask(studentSnapshot.practiceFilters, { quiet: true });
-  });
 
   useEffect(() => {
     if (!studentSnapshot.practiceTask) {
-      onLoad();
+      loadPracticeTask(studentSnapshot.practiceFilters, { quiet: true });
     }
-  }, [onLoad, studentSnapshot.practiceTask]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const options = studentSnapshot.practiceOptions;
   const task = studentSnapshot.practiceTask;
 
   async function handleStart(event) {
     event.preventDefault();
+    if (loading.practice) return;
     await loadPracticeTask(filters);
   }
 
   async function handleSubmit(event) {
     event.preventDefault();
-    if (!task) {
+    if (!task || loading.practice) {
       return;
     }
     await evaluatePracticeSubmission(task.id, answer);
@@ -75,8 +74,8 @@ export default function SelfEducationPage() {
           </label>
         </div>
 
-        <button type="submit" className="primary-button">
-          Start practice
+        <button type="submit" className="primary-button" disabled={loading.practice}>
+          {loading.practice ? "Loading..." : "Start practice"}
         </button>
       </form>
 

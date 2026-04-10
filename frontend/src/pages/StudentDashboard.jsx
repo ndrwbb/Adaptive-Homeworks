@@ -1,18 +1,15 @@
 import { Link } from "react-router-dom";
-import { useEffect, useEffectEvent } from "react";
+import { useEffect } from "react";
 
 import Loader from "../components/Loader";
 import { useAppContext } from "../context/AppContext";
 
 export default function StudentDashboard() {
   const { loadStudentDashboard, loading, session, studentSnapshot } = useAppContext();
-  const onLoad = useEffectEvent(() => {
-    loadStudentDashboard();
-  });
-
   useEffect(() => {
-    onLoad();
-  }, [onLoad]);
+    loadStudentDashboard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (loading.student && !studentSnapshot.dashboard) {
     return <Loader label="Preparing student dashboard..." />;

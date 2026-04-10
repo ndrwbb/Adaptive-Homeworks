@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useEffectEvent, useState } from "react";
+import { useDeferredValue, useEffect, useState } from "react";
 
 import Loader from "../components/Loader";
 import { useAppContext } from "../context/AppContext";
@@ -8,17 +8,17 @@ export default function StudentAnalytics() {
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
 
-  const onLoad = useEffectEvent(async () => {
-    const overview = await loadTeacherDashboard();
-    const firstStudent = overview?.students?.[0];
-    if (firstStudent) {
-      await loadStudentAnalytics(firstStudent.id);
-    }
-  });
-
   useEffect(() => {
-    onLoad();
-  }, [onLoad]);
+    async function load() {
+      const overview = await loadTeacherDashboard();
+      const firstStudent = overview?.students?.[0];
+      if (firstStudent) {
+        await loadStudentAnalytics(firstStudent.id);
+      }
+    }
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const normalizedQuery = deferredQuery.trim().toLowerCase();
   const filteredStudents = normalizedQuery

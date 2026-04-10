@@ -1,18 +1,16 @@
 import { Link } from "react-router-dom";
-import { useEffect, useEffectEvent } from "react";
+import { useEffect } from "react";
 
 import Loader from "../components/Loader";
 import { useAppContext } from "../context/AppContext";
 
 export default function TeacherDashboard() {
   const { loadTeacherDashboard, loading, teacherSnapshot } = useAppContext();
-  const onLoad = useEffectEvent(() => {
-    loadTeacherDashboard();
-  });
 
   useEffect(() => {
-    onLoad();
-  }, [onLoad]);
+    loadTeacherDashboard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (loading.teacher && teacherSnapshot.students.length === 0) {
     return <Loader label="Loading teacher workspace..." />;
