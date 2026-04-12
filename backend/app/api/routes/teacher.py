@@ -4,10 +4,18 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, require_teacher
 from app.api.routes.progress import build_progress_payload
+from app.models.homework_assignment import HomeworkAssignment
+from app.models.homework_item import HomeworkItem
+from app.models.homework_submission import HomeworkSubmission
 from app.models.learner_state import LearnerState
 from app.models.submission import Submission
 from app.models.task import Task
 from app.models.user import User
+from app.schemas.homework import (
+    ManualReviewIn,
+    ManualReviewOut,
+    PendingSubmissionOut,
+)
 from app.schemas.progress import StudentProgressOut, StudentSummaryOut
 from app.schemas.task import TaskCreateIn, TaskOut
 
@@ -80,3 +88,100 @@ def student_progress_view(student_id: int, db: Session = Depends(get_db), teache
     if not student:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
     return build_progress_payload(db, student)
+
+
+@router.get("/homeworks/{homework_id}/pending-reviews", response_model=list[PendingSubmissionOut])
+def pending_reviews(
+    homework_id: int,
+    db: Session = Depends(get_db),
+    teacher: User = Depends(require_teacher),
+):
+    """Список manual-ответов, ожидающих проверки учителем."""
+    from app.models.homework import Homework
+
+    homework = db.query(Homework).filter(Homework.id == homework_id, Homework.teacher_id == teacher.id).first()
+    if not homework:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Homework not found")
+
+    rows = (
+        db.query(HomeworkSubmission, HomeworkItem, HomeworkAssignment, User)
+        .join(HomeworkItem, HomeworkItem.id == HomeworkSubmission.item_id)
+        .join(HomeworkAssignment, HomeworkAssignment.id == HomeworkSubmission.assignment_id)
+        .join(User, User.id == HomeworkAssignment.student_id)
+        .filter(
+            HomeworkItem.homework_id == homework_id,
+            HomeworkItem.item_type == "manual",
+            HomeworkSubmission.review_status == "pending",
+        )
+        .all()
+    )
+
+    return [
+        PendingSubmissionOut(
+            submission_id=submission.id,
+            assignment_id=assignment.id,
+            student_name=student.full_name,
+            item_title=item.title,
+            item_prompt=item.prompt,
+            answer=submission.answer,
+            max_points=item.max_points,
+            review_status=submission.review_status,
+        )
+        for submission, item, assignment, student in rows
+    ]
+
+
+@router.post("/submissions/{submission_id}/review", response_model=ManualReviewOut)
+def review_submission(
+    submission_id: int,
+    data: ManualReviewIn,
+    db: Session = Depends(get_db),
+    teacher: User = Depends(require_teacher),
+):
+    """Выставить баллы за manual-задание и закрыть ревью."""
+    from app.api.routes.homeworks import compute_assignment_status
+    from app.models.homework import Homework
+
+    submission = db.query(HomeworkSubmission).filter(HomeworkSubmission.id == submission_id).first()
+    if not submission:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Submission not found")
+
+    item = db.query(HomeworkItem).filter(HomeworkItem.id == submission.item_id).first()
+    homework = db.query(Homework).filter(Homework.id == item.homework_id).first()
+
+    # Убеждаемся, что это домашка этого учителя
+    if homework.teacher_id != teacher.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your homework")
+
+    if item.item_type != "manual":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only manual items can be reviewed")
+
+    if data.awarded_points > item.max_points:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"awarded_points cannot exceed max_points ({item.max_points})",
+        )
+
+    submission.awarded_points = data.awarded_points
+    submission.review_status = "reviewed"
+    submission.is_correct = data.awarded_points > 0
+
+    # Пересчитываем статус и итоговый балл задания
+    assignment = db.query(HomeworkAssignment).filter(HomeworkAssignment.id == submission.assignment_id).first()
+    db.flush()
+    items = db.query(HomeworkItem).filter(HomeworkItem.homework_id == homework.id).all()
+    submissions = db.query(HomeworkSubmission).filter(HomeworkSubmission.assignment_id == assignment.id).all()
+    new_status, new_score = compute_assignment_status(homework, items, submissions, assignment)
+    assignment.status = new_status
+    assignment.final_score = new_score
+
+    db.commit()
+    db.refresh(submission)
+
+    return ManualReviewOut(
+        submission_id=submission.id,
+        awarded_points=submission.awarded_points,
+        review_status=submission.review_status,
+        assignment_status=new_status,
+        assignment_final_score=new_score,
+    )
