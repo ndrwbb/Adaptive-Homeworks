@@ -5,6 +5,11 @@ def normalize_text(value: str) -> str:
     return " ".join(value.strip().lower().replace(",", ".").split())
 
 
+def normalize_answer(answer: str) -> str:
+    """Normalize answer for comparison: str → strip → lower → remove spaces → commas to dots."""
+    return normalize_text(str(answer)).replace(" ", "")
+
+
 def try_parse_number(value: str):
     value = normalize_text(value)
 

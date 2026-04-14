@@ -80,15 +80,20 @@ class ASGITestClient:
         async def send(message):
             messages.append(message)
 
+        if "?" in path:
+            path_part, qs_part = path.split("?", 1)
+        else:
+            path_part, qs_part = path, ""
+
         scope = {
             "type": "http",
             "asgi": {"version": "3.0"},
             "http_version": "1.1",
             "method": method,
             "scheme": "http",
-            "path": path,
-            "raw_path": path.encode("utf-8"),
-            "query_string": b"",
+            "path": path_part,
+            "raw_path": path_part.encode("utf-8"),
+            "query_string": qs_part.encode("utf-8"),
             "headers": raw_headers,
             "client": ("testclient", 50000),
             "server": ("testserver", 80),

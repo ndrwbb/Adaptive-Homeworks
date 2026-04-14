@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import auth, homeworks, progress, submissions, tasks, teacher
+from app.api.routes import auth, homeworks, progress, stats, submissions, tasks, teacher
 from app.core.config import get_settings
 from app.db.base import Base
 from app.db.session import SessionLocal, engine
@@ -59,6 +59,7 @@ def create_app(session_factory=None, engine=None):
     app.include_router(progress.router)
     app.include_router(homeworks.router)
     app.include_router(teacher.router)
+    app.include_router(stats.router)
 
     return app
 

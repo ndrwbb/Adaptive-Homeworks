@@ -1,0 +1,250 @@
+"""
+Temporary in-memory task bank for the adaptive homework MVP.
+
+Replace this module with a real database query layer once the DB schema is finalised.
+Each task dict mirrors the future Task model fields.
+"""
+
+FAKE_TASKS: list[dict] = [
+    # ── arithmetic ──────────────────────────────────────────────
+    {
+        "id": 1,
+        "topic": "arithmetic",
+        "difficulty": 1,
+        "grade": 5,
+        "task_type": "open_answer",
+        "question": "Вычислите: 48 + 57",
+        "options": None,
+        "answer": "105",
+        "solution": "48 + 57 = 105.",
+    },
+    {
+        "id": 2,
+        "topic": "arithmetic",
+        "difficulty": 2,
+        "grade": 6,
+        "task_type": "open_answer",
+        "question": "Вычислите: 123 × 4 − 92",
+        "options": None,
+        "answer": "400",
+        "solution": "123 × 4 = 492; 492 − 92 = 400.",
+    },
+    {
+        "id": 3,
+        "topic": "arithmetic",
+        "difficulty": 3,
+        "grade": 7,
+        "task_type": "open_answer",
+        "question": "Найдите значение выражения: (−12) × 5 + 30",
+        "options": None,
+        "answer": "-30",
+        "solution": "(−12) × 5 = −60; −60 + 30 = −30.",
+    },
+    # ── fractions ───────────────────────────────────────────────
+    {
+        "id": 4,
+        "topic": "fractions",
+        "difficulty": 1,
+        "grade": 5,
+        "task_type": "open_answer",
+        "question": "Вычислите: 1/2 + 1/2",
+        "options": None,
+        "answer": "1",
+        "solution": "1/2 + 1/2 = 2/2 = 1.",
+    },
+    {
+        "id": 5,
+        "topic": "fractions",
+        "difficulty": 2,
+        "grade": 6,
+        "task_type": "open_answer",
+        "question": "Вычислите: 3/4 − 1/4",
+        "options": None,
+        "answer": "1/2",
+        "solution": "3/4 − 1/4 = 2/4 = 1/2.",
+    },
+    {
+        "id": 6,
+        "topic": "fractions",
+        "difficulty": 4,
+        "grade": 7,
+        "task_type": "open_answer",
+        "question": "Вычислите: 2/3 × 3/5",
+        "options": None,
+        "answer": "2/5",
+        "solution": "2/3 × 3/5 = 6/15 = 2/5.",
+    },
+    # ── percentages ─────────────────────────────────────────────
+    {
+        "id": 7,
+        "topic": "percentages",
+        "difficulty": 2,
+        "grade": 6,
+        "task_type": "open_answer",
+        "question": "Найдите 20% от числа 150",
+        "options": None,
+        "answer": "30",
+        "solution": "20% = 0.2. Тогда 150 × 0.2 = 30.",
+    },
+    {
+        "id": 8,
+        "topic": "percentages",
+        "difficulty": 3,
+        "grade": 7,
+        "task_type": "open_answer",
+        "question": "Цена товара 800 руб. Скидка 15%. Какова цена со скидкой?",
+        "options": None,
+        "answer": "680",
+        "solution": "800 × 0.15 = 120; 800 − 120 = 680.",
+    },
+    # ── linear_equations ────────────────────────────────────────
+    {
+        "id": 9,
+        "topic": "linear_equations",
+        "difficulty": 2,
+        "grade": 6,
+        "task_type": "open_answer",
+        "question": "Решите уравнение: 2x + 4 = 10",
+        "options": None,
+        "answer": "3",
+        "solution": "2x = 10 − 4 = 6; x = 3.",
+    },
+    {
+        "id": 10,
+        "topic": "linear_equations",
+        "difficulty": 3,
+        "grade": 7,
+        "task_type": "open_answer",
+        "question": "Решите уравнение: 5x − 3 = 2x + 9",
+        "options": None,
+        "answer": "4",
+        "solution": "5x − 2x = 9 + 3; 3x = 12; x = 4.",
+    },
+    {
+        "id": 11,
+        "topic": "linear_equations",
+        "difficulty": 5,
+        "grade": 9,
+        "task_type": "open_answer",
+        "question": "Решите уравнение: (x + 2)/3 = (2x − 1)/5",
+        "options": None,
+        "answer": "13",
+        "solution": "5(x + 2) = 3(2x − 1) → 5x + 10 = 6x − 3 → −x = −13 → x = 13.",
+    },
+    # ── geometry ────────────────────────────────────────────────
+    {
+        "id": 12,
+        "topic": "geometry",
+        "difficulty": 1,
+        "grade": 5,
+        "task_type": "open_answer",
+        "question": "Найдите периметр прямоугольника со сторонами 5 см и 3 см.",
+        "options": None,
+        "answer": "16",
+        "solution": "P = 2 × (5 + 3) = 2 × 8 = 16 см.",
+    },
+    {
+        "id": 13,
+        "topic": "geometry",
+        "difficulty": 3,
+        "grade": 7,
+        "task_type": "open_answer",
+        "question": "Найдите площадь треугольника с основанием 10 см и высотой 6 см.",
+        "options": None,
+        "answer": "30",
+        "solution": "S = (1/2) × 10 × 6 = 30 см².",
+    },
+    # ── probability ─────────────────────────────────────────────
+    {
+        "id": 14,
+        "topic": "probability",
+        "difficulty": 2,
+        "grade": 8,
+        "task_type": "open_answer",
+        "question": "В мешке 3 красных и 7 синих шаров. Какова вероятность вытащить красный шар?",
+        "options": None,
+        "answer": "0.3",
+        "solution": "P = 3 / (3 + 7) = 3/10 = 0.3.",
+    },
+    {
+        "id": 15,
+        "topic": "probability",
+        "difficulty": 4,
+        "grade": 9,
+        "task_type": "open_answer",
+        "question": "Бросают два кубика. Какова вероятность, что сумма равна 7?",
+        "options": None,
+        "answer": "1/6",
+        "solution": "Всего 36 исходов. Благоприятных: (1,6),(2,5),(3,4),(4,3),(5,2),(6,1) — 6. P = 6/36 = 1/6.",
+    },
+    # ── statistics ──────────────────────────────────────────────
+    {
+        "id": 16,
+        "topic": "statistics",
+        "difficulty": 1,
+        "grade": 7,
+        "task_type": "open_answer",
+        "question": "Найдите среднее арифметическое чисел 4, 8, 12.",
+        "options": None,
+        "answer": "8",
+        "solution": "(4 + 8 + 12) / 3 = 24 / 3 = 8.",
+    },
+    {
+        "id": 17,
+        "topic": "statistics",
+        "difficulty": 3,
+        "grade": 8,
+        "task_type": "open_answer",
+        "question": "Найдите медиану набора данных: 2, 5, 7, 10, 15.",
+        "options": None,
+        "answer": "7",
+        "solution": "Данные уже упорядочены. Медиана — средний элемент = 7.",
+    },
+    # ── word_problems ───────────────────────────────────────────
+    {
+        "id": 18,
+        "topic": "word_problems",
+        "difficulty": 2,
+        "grade": 6,
+        "task_type": "open_answer",
+        "question": "В магазине было 120 яблок. Продали 45. Сколько осталось?",
+        "options": None,
+        "answer": "75",
+        "solution": "120 − 45 = 75.",
+    },
+    {
+        "id": 19,
+        "topic": "word_problems",
+        "difficulty": 4,
+        "grade": 8,
+        "task_type": "open_answer",
+        "question": "Поезд проехал 240 км за 3 часа. С какой скоростью он двигался?",
+        "options": None,
+        "answer": "80",
+        "solution": "v = 240 / 3 = 80 км/ч.",
+    },
+    {
+        "id": 20,
+        "topic": "word_problems",
+        "difficulty": 5,
+        "grade": 9,
+        "task_type": "open_answer",
+        "question": "Два рабочих вместе выполняют заказ за 6 часов. Первый может сделать его за 10 часов. За сколько часов выполнит заказ второй рабочий?",
+        "options": None,
+        "answer": "15",
+        "solution": "1/10 + 1/x = 1/6 → 1/x = 1/6 − 1/10 = (10−6)/60 = 4/60 = 1/15 → x = 15.",
+    },
+]
+
+
+def get_all_tasks() -> list[dict]:
+    """Return all fake tasks (makes future DB swap trivial)."""
+    return FAKE_TASKS
+
+
+def get_task_by_id(task_id: int) -> dict | None:
+    """Return a single task by ID or None."""
+    for task in FAKE_TASKS:
+        if task["id"] == task_id:
+            return task
+    return None
