@@ -48,7 +48,7 @@ docs/
 From the repository root:
 
 ```bash
-PYTHONPATH=backend /Users/andreybobua/PycharmProjects/EdTech/venv/bin/python -m uvicorn app.main:app --reload
+PYTHONPATH=backend .venv/bin/python -m uvicorn app.main:app --reload
 ```
 
 Swagger UI:
@@ -66,7 +66,7 @@ http://127.0.0.1:8000/health
 Seed demo data manually if needed:
 
 ```bash
-PYTHONPATH=backend /Users/andreybobua/PycharmProjects/EdTech/venv/bin/python backend/seed.py
+PYTHONPATH=backend .venv/bin/python backend/seed.py
 ```
 
 ## Frontend Run
@@ -83,7 +83,7 @@ The frontend expects the backend at `http://127.0.0.1:8000` by default. You can 
 Backend tests:
 
 ```bash
-PYTHONPATH=backend /Users/andreybobua/PycharmProjects/EdTech/venv/bin/python -m unittest discover -s backend/tests -v
+PYTHONPATH=backend .venv/bin/python -m unittest discover -s backend/tests -v
 ```
 
 Frontend production build:
