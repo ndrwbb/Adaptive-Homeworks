@@ -43,6 +43,20 @@ class ASGITestClient:
             json_body = kwargs["json"]
         return self.request("POST", path, json_body=json_body, data=data, headers=headers)
 
+    def patch(
+        self,
+        path: str,
+        json_body: dict | None = None,
+        headers: dict[str, str] | None = None,
+        **kwargs,
+    ):
+        if "json" in kwargs:
+            json_body = kwargs["json"]
+        return self.request("PATCH", path, json_body=json_body, headers=headers)
+
+    def delete(self, path: str, headers: dict[str, str] | None = None):
+        return self.request("DELETE", path, headers=headers)
+
     def request(
         self,
         method: str,

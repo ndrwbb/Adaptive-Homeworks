@@ -17,7 +17,7 @@ from app.schemas.homework import (
     PendingSubmissionOut,
 )
 from app.schemas.progress import StudentProgressOut, StudentSummaryOut
-from app.schemas.task import TaskCreateIn, TaskOut
+from app.schemas.task import TaskCreateIn, TaskOut, TaskUpdateIn
 
 router = APIRouter(prefix="/teacher", tags=["teacher"])
 
@@ -30,6 +30,10 @@ def serialize_task(task: Task) -> TaskOut:
         difficulty=task.difficulty,
         topic=task.topic,
         answer_key=task.answer_key,
+        solution=task.solution,
+        grade=task.grade,
+        task_type=task.task_type,
+        is_archived=task.is_archived,
     )
 
 
@@ -46,6 +50,9 @@ def create_task(
         difficulty=data.difficulty,
         topic=data.topic.strip(),
         answer_key=data.answer_key.strip() if data.answer_key else None,
+        solution=data.solution.strip() if data.solution else None,
+        grade=data.grade,
+        task_type=data.task_type.strip(),
     )
     db.add(task)
     db.commit()
@@ -54,10 +61,60 @@ def create_task(
 
 
 @router.get("/tasks", response_model=list[TaskOut])
-def list_tasks(db: Session = Depends(get_db), teacher: User = Depends(require_teacher)):
+def list_tasks(
+    topic: str | None = None,
+    difficulty: int | None = None,
+    include_archived: bool = False,
+    db: Session = Depends(get_db),
+    teacher: User = Depends(require_teacher),
+):
     _ = teacher
-    tasks = db.query(Task).order_by(Task.difficulty.asc(), Task.id.asc()).all()
+    query = db.query(Task)
+    if topic:
+        query = query.filter(Task.topic == topic)
+    if difficulty is not None:
+        query = query.filter(Task.difficulty == difficulty)
+    if not include_archived:
+        query = query.filter(Task.is_archived.is_(False))
+    tasks = query.order_by(Task.difficulty.asc(), Task.id.asc()).all()
     return [serialize_task(task) for task in tasks]
+
+
+@router.patch("/tasks/{task_id}", response_model=TaskOut)
+def update_task(
+    task_id: int,
+    data: TaskUpdateIn,
+    db: Session = Depends(get_db),
+    teacher: User = Depends(require_teacher),
+):
+    _ = teacher
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+
+    values = data.model_dump(exclude_unset=True)
+    for field in ("title", "body", "topic", "answer_key", "solution", "task_type"):
+        if field in values and values[field] is not None:
+            values[field] = values[field].strip()
+    for field, value in values.items():
+        setattr(task, field, value)
+
+    db.commit()
+    db.refresh(task)
+    return serialize_task(task)
+
+
+@router.delete("/tasks/{task_id}", response_model=TaskOut)
+def archive_task(task_id: int, db: Session = Depends(get_db), teacher: User = Depends(require_teacher)):
+    _ = teacher
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+
+    task.is_archived = True
+    db.commit()
+    db.refresh(task)
+    return serialize_task(task)
 
 
 @router.get("/students", response_model=list[StudentSummaryOut])
@@ -147,7 +204,11 @@ def review_submission(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Submission not found")
 
     item = db.query(HomeworkItem).filter(HomeworkItem.id == submission.item_id).first()
+    if not item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Homework item not found")
     homework = db.query(Homework).filter(Homework.id == item.homework_id).first()
+    if not homework:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Homework not found")
 
     # Убеждаемся, что это домашка этого учителя
     if homework.teacher_id != teacher.id:
@@ -158,13 +219,14 @@ def review_submission(
 
     if data.awarded_points > item.max_points:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=f"awarded_points cannot exceed max_points ({item.max_points})",
         )
 
     submission.awarded_points = data.awarded_points
     submission.review_status = "reviewed"
     submission.is_correct = data.awarded_points > 0
+    submission.review_comment = data.comment.strip() if data.comment else None
 
     # Пересчитываем статус и итоговый балл задания
     assignment = db.query(HomeworkAssignment).filter(HomeworkAssignment.id == submission.assignment_id).first()

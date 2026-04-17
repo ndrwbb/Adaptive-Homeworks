@@ -13,8 +13,9 @@ class HomeworkSubmission(Base):
     assignment_id: Mapped[int] = mapped_column(ForeignKey("homework_assignments.id"), index=True)
     item_id: Mapped[int] = mapped_column(ForeignKey("homework_items.id"), index=True)
     answer: Mapped[str] = mapped_column(Text)
+    expected_answer: Mapped[str | None] = mapped_column(String(255), nullable=True)
     is_correct: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     awarded_points: Mapped[int] = mapped_column(Integer, default=0)
     review_status: Mapped[str] = mapped_column(String(50), default="pending")
+    review_comment: Mapped[str | None] = mapped_column(Text, nullable=True)
     submitted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-

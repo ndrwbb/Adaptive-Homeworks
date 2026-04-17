@@ -6,6 +6,7 @@ from app.models.homework_item import HomeworkItem
 from sqlalchemy.orm import Session
 
 from app.core.security import hash_password
+from app.fake_tasks import FAKE_TASKS
 from app.models.learner_state import LearnerState
 from app.models.task import Task
 from app.models.user import User
@@ -19,48 +20,43 @@ DEMO_USERS = [
 
 DEMO_TASKS = [
     {
-        "title": "Linear equation",
-        "body": "Solve the equation: 2x + 3 = 11",
-        "difficulty": 1,
-        "topic": "algebra",
-        "answer_key": "4",
-    },
-    {
-        "title": "Fractions warm-up",
-        "body": "Compute: 3/4 + 1/4",
-        "difficulty": 1,
-        "topic": "arithmetic",
-        "answer_key": "1",
-    },
-    {
-        "title": "Word problem",
-        "body": "A student solved 5 tasks on Monday and 7 on Tuesday. How many tasks in total?",
-        "difficulty": 1,
-        "topic": "word problems",
-        "answer_key": "12",
-    },
-    {
-        "title": "System of equations",
-        "body": "Find x if x + y = 10 and y = 4.",
-        "difficulty": 2,
-        "topic": "algebra",
-        "answer_key": "6",
-    },
-    {
-        "title": "Essay reflection",
-        "body": "Explain in 2-3 sentences why regular practice improves learning outcomes.",
-        "difficulty": 2,
-        "topic": "reflection",
-        "answer_key": None,
-    },
-    {
-        "title": "Quadratic roots",
-        "body": "Find both roots of x^2 - 5x + 6 = 0.",
-        "difficulty": 3,
-        "topic": "algebra",
-        "answer_key": "2, 3",
-    },
+        "id": task["id"],
+        "title": f"{task['topic'].replace('_', ' ').title()} #{task['id']}",
+        "body": task["question"],
+        "difficulty": min(task["difficulty"], 3),
+        "topic": task["topic"],
+        "answer_key": task["answer"],
+        "solution": task["solution"],
+        "grade": task["grade"],
+        "task_type": task["task_type"],
+    }
+    for task in FAKE_TASKS
 ]
+
+DEMO_TASKS.extend(
+    [
+        {
+            "title": "Essay reflection",
+            "body": "Explain in 2-3 sentences why regular practice improves learning outcomes.",
+            "difficulty": 2,
+            "topic": "reflection",
+            "answer_key": None,
+            "solution": None,
+            "grade": 7,
+            "task_type": "manual",
+        },
+        {
+            "title": "Quadratic roots",
+            "body": "Find both roots of x^2 - 5x + 6 = 0.",
+            "difficulty": 3,
+            "topic": "algebra",
+            "answer_key": "2, 3",
+            "solution": "x^2 - 5x + 6 = (x - 2)(x - 3), so x = 2 or x = 3.",
+            "grade": 8,
+            "task_type": "open_answer",
+        },
+    ]
+)
 
 
 def seed_demo_data(db: Session):

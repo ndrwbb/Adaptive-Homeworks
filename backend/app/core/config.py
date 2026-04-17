@@ -5,6 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    app_env: str = "development"
     database_url: str = "sqlite:///./edtech.db"
     jwt_secret: str = "change_me_please"
     jwt_alg: str = "HS256"
@@ -24,4 +25,3 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
-

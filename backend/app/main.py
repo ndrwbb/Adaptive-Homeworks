@@ -12,6 +12,8 @@ from seed import seed_demo_data
 
 def create_app(session_factory=None, engine=None):
     settings = get_settings()
+    if settings.app_env.lower() == "production" and settings.jwt_secret == "change_me_please":
+        raise RuntimeError("JWT_SECRET must be configured in production")
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):

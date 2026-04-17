@@ -2,7 +2,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.api.deps import get_db, get_current_user, require_student, require_teacher
+from app.api.deps import get_db, require_student, require_teacher
 from app.models.learner_state import LearnerState
 from app.models.submission import Submission
 from app.models.task import Task
@@ -73,4 +73,3 @@ def student_progress(student_id: int, db: Session = Depends(get_db), teacher: Us
     if not student:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
     return build_progress_payload(db, student)
-

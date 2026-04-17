@@ -1,5 +1,5 @@
 """
-Tests for the adaptive task endpoints (fake-data layer).
+Tests for the backwards-compatible adaptive task endpoints.
 
 These tests exercise:
   - GET /tasks/next
@@ -10,16 +10,11 @@ These tests exercise:
 """
 
 from backend.tests.base import BackendTestCase
-from app.services.adaptive import USER_ANSWERS, USER_STATE
+from app.models.learner_topic_state import LearnerTopicState
+from app.models.practice_attempt import PracticeAttempt
 
 
 class AdaptiveTaskTests(BackendTestCase):
-    def setUp(self):
-        super().setUp()
-        # Reset in-memory adaptive state between tests
-        USER_STATE.clear()
-        USER_ANSWERS.clear()
-
     # ── GET /tasks/next ─────────────────────────────────────────
 
     def test_get_next_task_returns_200(self):
@@ -105,6 +100,12 @@ class AdaptiveTaskTests(BackendTestCase):
         self.assertEqual(data["current_difficulty"], 3)
         self.assertEqual(data["total_answers"], 2)
         self.assertEqual(data["correct_answers"], 2)
+
+        with self.SessionLocal() as db:
+            attempts = db.query(PracticeAttempt).filter(PracticeAttempt.external_user_key == "u1").count()
+            states = db.query(LearnerTopicState).filter(LearnerTopicState.external_user_key == "u1").count()
+            self.assertEqual(attempts, 2)
+            self.assertEqual(states, 1)
 
     def test_submit_answer_task_not_found(self):
         response = self.client.post(

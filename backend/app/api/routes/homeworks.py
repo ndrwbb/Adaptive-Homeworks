@@ -186,6 +186,7 @@ def submit_homework_item(
 
     if existing:
         existing.answer = data.answer.strip()
+        existing.expected_answer = item.answer_key
         existing.is_correct = is_correct
         existing.awarded_points = awarded_points
         existing.review_status = review_status
@@ -195,6 +196,7 @@ def submit_homework_item(
             assignment_id=assignment.id,
             item_id=item.id,
             answer=data.answer.strip(),
+            expected_answer=item.answer_key,
             is_correct=is_correct,
             awarded_points=awarded_points,
             review_status=review_status,
@@ -243,6 +245,12 @@ def teacher_homeworks(db: Session = Depends(get_db), teacher: User = Depends(req
 
 @router.post("/teacher/homeworks", response_model=TeacherHomeworkOut, status_code=status.HTTP_201_CREATED)
 def create_homework(data: HomeworkCreateIn, db: Session = Depends(get_db), teacher: User = Depends(require_teacher)):
+    if len(set(data.assignee_ids)) != len(data.assignee_ids):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Assignees must be unique")
+    assignees = db.query(User).filter(User.id.in_(data.assignee_ids), User.role == "student").all()
+    if len(assignees) != len(set(data.assignee_ids)):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="All assignees must be existing students")
+
     max_score = sum(item.max_points for item in data.items)
     requires_manual_review = any(item.item_type == "manual" for item in data.items)
     homework = Homework(

@@ -87,7 +87,7 @@ class ManualReviewTests(BackendTestCase):
         # Учитель ставит 8 из 10 баллов
         review_resp = self.client.post(
             f"/teacher/submissions/{submission_id}/review",
-            json={"awarded_points": 8},
+            json={"awarded_points": 8, "comment": "Clear argument."},
             headers=teacher_headers,
         )
         self.assertEqual(review_resp.status_code, 200, review_resp.text)
@@ -96,6 +96,12 @@ class ManualReviewTests(BackendTestCase):
         self.assertEqual(payload["review_status"], "reviewed")
         self.assertEqual(payload["assignment_status"], "checked")
         self.assertEqual(payload["assignment_final_score"], 8)
+
+        from app.models.homework_submission import HomeworkSubmission
+
+        with self.SessionLocal() as db:
+            saved = db.query(HomeworkSubmission).filter(HomeworkSubmission.id == submission_id).first()
+            self.assertEqual(saved.review_comment, "Clear argument.")
 
     def test_review_rejects_points_over_max(self):
         teacher_headers = self.auth_headers("teacher@example.com", "demo123")
@@ -126,3 +132,42 @@ class ManualReviewTests(BackendTestCase):
             headers=teacher_headers,
         )
         self.assertEqual(over_resp.status_code, 422, over_resp.text)
+
+    def test_teacher_cannot_review_another_teachers_submission(self):
+        teacher_headers = self.auth_headers("teacher@example.com", "demo123")
+        student_headers = self.auth_headers("student@example.com", "demo123")
+
+        register_response = self.client.post(
+            "/auth/register",
+            json={
+                "email": "other.teacher@example.com",
+                "password": "secret123",
+                "role": "teacher",
+                "full_name": "Other Teacher",
+            },
+        )
+        self.assertEqual(register_response.status_code, 201, register_response.text)
+        other_teacher_headers = self.auth_headers("other.teacher@example.com", "secret123")
+
+        students = self.client.get("/teacher/students", headers=teacher_headers).json()
+        student_id = students[0]["id"]
+        hw = self._create_homework_with_manual_item(teacher_headers, student_id)
+
+        assignments = self.client.get("/homeworks/my", headers=student_headers).json()
+        assignment = next(a for a in assignments if a["homework_id"] == hw["homework_id"])
+        detail = self.client.get(f"/homeworks/my/{assignment['assignment_id']}", headers=student_headers).json()
+        manual_item = next(item for item in detail["items"] if item["item_type"] == "manual")
+        submit_resp = self.client.post(
+            f"/homeworks/my/{assignment['assignment_id']}/submit-item",
+            json={"item_id": manual_item["id"], "answer": "Owned by the first teacher."},
+            headers=student_headers,
+        )
+        submission_id = submit_resp.json()["submission_id"]
+
+        review_resp = self.client.post(
+            f"/teacher/submissions/{submission_id}/review",
+            json={"awarded_points": 5},
+            headers=other_teacher_headers,
+        )
+
+        self.assertEqual(review_resp.status_code, 403, review_resp.text)

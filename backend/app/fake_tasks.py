@@ -1,9 +1,4 @@
-"""
-Temporary in-memory task bank for the adaptive homework MVP.
-
-Replace this module with a real database query layer once the DB schema is finalised.
-Each task dict mirrors the future Task model fields.
-"""
+"""Demo task catalog used only to seed the database."""
 
 FAKE_TASKS: list[dict] = [
     # ── arithmetic ──────────────────────────────────────────────
@@ -235,16 +230,3 @@ FAKE_TASKS: list[dict] = [
         "solution": "1/10 + 1/x = 1/6 → 1/x = 1/6 − 1/10 = (10−6)/60 = 4/60 = 1/15 → x = 15.",
     },
 ]
-
-
-def get_all_tasks() -> list[dict]:
-    """Return all fake tasks (makes future DB swap trivial)."""
-    return FAKE_TASKS
-
-
-def get_task_by_id(task_id: int) -> dict | None:
-    """Return a single task by ID or None."""
-    for task in FAKE_TASKS:
-        if task["id"] == task_id:
-            return task
-    return None
