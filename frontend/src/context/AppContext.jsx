@@ -12,6 +12,8 @@ import {
   fetchTeacherStudentProgress,
   fetchTeacherStudents,
   fetchTeacherTasks,
+  fetchTeacherTopics,
+  generateTeacherHomework,
   healthCheck,
   loginUser,
   registerUser,
@@ -57,6 +59,7 @@ const emptyTeacherSnapshot = {
   students: [],
   tasks: [],
   homeworks: [],
+  topics: [],
   stats: [],
   selectedStudentId: null,
   selectedStudentProgress: null,
@@ -653,6 +656,63 @@ export function AppProvider({ children }) {
     return homework;
   }
 
+  async function generateHomework(payload) {
+    if (!session || session.user.role !== "teacher") {
+      return null;
+    }
+
+    if (session.mode === "live") {
+      try {
+        const result = await generateTeacherHomework(session.token, payload);
+        const [students, tasks, homeworks] = await Promise.all([
+          fetchTeacherStudents(session.token),
+          fetchTeacherTasks(session.token),
+          fetchTeacherHomeworks(session.token),
+        ]);
+        setTeacherSnapshot((current) => ({
+          ...current,
+          students,
+          tasks,
+          homeworks,
+          stats: buildTeacherOverview(students, tasks, homeworks).stats,
+        }));
+        pushToast("Homework generated via live API.", "success");
+        setBackendMode("live");
+        return result;
+      } catch (err) {
+        const detail = err?.response?.data?.detail;
+        if (detail) {
+          pushToast(detail, "warning");
+        }
+        throw err;
+      }
+    }
+
+    pushToast("Generation requires a live backend.", "warning");
+    return null;
+  }
+
+  async function loadTopics() {
+    if (!session || session.user.role !== "teacher") {
+      return [];
+    }
+
+    if (session.mode === "live") {
+      try {
+        const topics = await fetchTeacherTopics(session.token);
+        setTeacherSnapshot((current) => ({ ...current, topics }));
+        return topics;
+      } catch {
+        setBackendMode("demo");
+      }
+    }
+
+    // Fallback: extract topics from loaded tasks
+    const topics = [...new Set(teacherSnapshot.tasks.map((t) => t.topic))].sort();
+    setTeacherSnapshot((current) => ({ ...current, topics }));
+    return topics;
+  }
+
   async function loadStudentAnalytics(studentId) {
     if (!session || session.user.role !== "teacher") {
       return null;
@@ -689,6 +749,7 @@ export function AppProvider({ children }) {
     createTask,
     evaluateHomeworkItem,
     evaluatePracticeSubmission,
+    generateHomework,
     loadPracticeTask,
     loadStudentAnalytics,
     loadStudentDashboard,
@@ -696,6 +757,7 @@ export function AppProvider({ children }) {
     loadStudentProgress,
     loadTeacherDashboard,
     loadTeacherHomeworks,
+    loadTopics,
     loading,
     login,
     logout,

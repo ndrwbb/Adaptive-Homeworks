@@ -6,7 +6,7 @@ import Toast from "./Toast";
 function roleLinks(role) {
   if (role === "student") {
     return [
-      { to: "/student", label: "Dashboard" },
+      { to: "/dashboard", label: "Dashboard" },
       { to: "/student/homeworks", label: "Homeworks" },
       { to: "/student/self-education", label: "Self-Education" },
       { to: "/student/progress", label: "Progress" },
@@ -15,7 +15,7 @@ function roleLinks(role) {
 
   if (role === "teacher") {
     return [
-      { to: "/teacher", label: "Dashboard" },
+      { to: "/dashboard", label: "Dashboard" },
       { to: "/teacher/homeworks", label: "Homeworks" },
       { to: "/teacher/tasks", label: "Task Bank" },
       { to: "/teacher/students", label: "Students" },

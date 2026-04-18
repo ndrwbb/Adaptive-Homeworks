@@ -4,13 +4,16 @@ import Loader from "../components/Loader";
 import { useAppContext } from "../context/AppContext";
 import { buildTeacherHomeworkCards } from "../lib/homeworks";
 
-const blankItem = () => ({
-  title: "",
-  prompt: "",
-  item_type: "test",
-  difficulty: 1,
-  max_points: 5,
-  answer_key: "",
+const DIFFICULTY_LABELS = {
+  easy: "Easy",
+  medium: "Medium",
+  hard: "Hard",
+};
+
+const blankRule = () => ({
+  topic: "",
+  difficulty_group: "easy",
+  count: 1,
 });
 
 const initialForm = {
@@ -19,47 +22,99 @@ const initialForm = {
   description: "",
   deadline: "2099-03-10T18:00:00",
   assignee_ids: [],
-  items: [blankItem()],
+  rules: [blankRule()],
 };
 
 export default function TeacherHomeworksPage() {
-  const { createHomework, loadTeacherHomeworks, loading, teacherSnapshot } = useAppContext();
+  const { generateHomework, loadTeacherHomeworks, loadTopics, loading, teacherSnapshot } = useAppContext();
   const [showComposer, setShowComposer] = useState(false);
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [preview, setPreview] = useState(null);
 
   useEffect(() => {
     loadTeacherHomeworks();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (showComposer) {
+      loadTopics();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showComposer]);
+
   if (loading.teacher && teacherSnapshot.homeworks.length === 0) {
     return <Loader label="Loading teacher homeworks..." />;
   }
 
   const cards = buildTeacherHomeworkCards(teacherSnapshot.homeworks, teacherSnapshot.students);
+  const topics = teacherSnapshot.topics || [];
 
-  function updateItem(index, field, value) {
+  function updateRule(index, field, value) {
     setForm((current) => ({
       ...current,
-      items: current.items.map((item, itemIndex) =>
-        itemIndex === index ? { ...item, [field]: value } : item,
+      rules: current.rules.map((rule, ruleIndex) =>
+        ruleIndex === index ? { ...rule, [field]: value } : rule,
       ),
     }));
   }
 
-  async function handleSubmit(event) {
+  function removeRule(index) {
+    setForm((current) => ({
+      ...current,
+      rules: current.rules.filter((_, ruleIndex) => ruleIndex !== index),
+    }));
+  }
+
+  async function handleGenerate(event) {
     event.preventDefault();
     setError("");
+    setPreview(null);
 
     if (form.assignee_ids.length === 0) {
       setError("Choose at least one assignee.");
       return;
     }
 
-    await createHomework(form);
-    setForm(initialForm);
-    setShowComposer(false);
+    if (form.rules.length === 0) {
+      setError("Add at least one generation rule.");
+      return;
+    }
+
+    const invalidRule = form.rules.find((rule) => !rule.topic);
+    if (invalidRule) {
+      setError("All rules must have a topic selected.");
+      return;
+    }
+
+    setGenerating(true);
+    try {
+      const payload = {
+        title: form.title,
+        subject: form.subject,
+        description: form.description,
+        deadline: form.deadline,
+        student_ids: form.assignee_ids,
+        rules: form.rules.map((rule) => ({
+          topic: rule.topic,
+          difficulty_group: rule.difficulty_group,
+          count: rule.count,
+        })),
+      };
+
+      const result = await generateHomework(payload);
+      if (result) {
+        setPreview(result);
+        setForm(initialForm);
+        setShowComposer(false);
+      }
+    } catch {
+      setError("Generation failed. Check that the task bank has matching tasks.");
+    } finally {
+      setGenerating(false);
+    }
   }
 
   return (
@@ -69,13 +124,13 @@ export default function TeacherHomeworksPage() {
           <span className="eyebrow">Teacher homeworks</span>
           <h1>Assigned homework builder</h1>
         </div>
-        <button type="button" className="primary-button" onClick={() => setShowComposer((current) => !current)}>
+        <button type="button" className="primary-button" onClick={() => { setShowComposer((current) => !current); setPreview(null); }}>
           {showComposer ? "Close composer" : "New Homework"}
         </button>
       </div>
 
       {showComposer ? (
-        <form className="panel stack" onSubmit={handleSubmit}>
+        <form className="panel stack" onSubmit={handleGenerate}>
           <div className="field-grid">
             <label className="field">
               <span>Title</span>
@@ -101,7 +156,6 @@ export default function TeacherHomeworksPage() {
               rows="4"
               value={form.description}
               onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
-              required
             />
           </label>
 
@@ -143,84 +197,101 @@ export default function TeacherHomeworksPage() {
           <div className="stack">
             <div className="toolbar-row">
               <div>
-                <span className="eyebrow">Homework items</span>
-                <h2>Fill the assignment with exercises</h2>
+                <span className="eyebrow">Generation rules</span>
+                <h2>Configure auto-generation</h2>
               </div>
               <button
                 type="button"
                 className="ghost-button"
                 onClick={() =>
-                  setForm((current) => ({ ...current, items: [...current.items, blankItem()] }))
+                  setForm((current) => ({ ...current, rules: [...current.rules, blankRule()] }))
                 }
               >
-                Add item
+                + Add rule
               </button>
             </div>
 
-            {form.items.map((item, index) => (
-              <div className="panel panel--subtle stack" key={`${index}-${item.title}`}>
-                <div className="field-grid">
-                  <label className="field">
-                    <span>Title</span>
-                    <input value={item.title} onChange={(event) => updateItem(index, "title", event.target.value)} required />
-                  </label>
-                  <label className="field">
-                    <span>Type</span>
-                    <select
-                      value={item.item_type}
-                      onChange={(event) => updateItem(index, "item_type", event.target.value)}
-                    >
-                      <option value="test">Test</option>
-                      <option value="manual">Manual</option>
-                    </select>
-                  </label>
-                </div>
+            {form.rules.map((rule, index) => (
+              <div className="rule-row" key={index}>
                 <label className="field">
-                  <span>Prompt</span>
-                  <textarea rows="3" value={item.prompt} onChange={(event) => updateItem(index, "prompt", event.target.value)} required />
+                  <span>Topic</span>
+                  <select
+                    value={rule.topic}
+                    onChange={(event) => updateRule(index, "topic", event.target.value)}
+                    required
+                  >
+                    <option value="">Select topic…</option>
+                    {topics.map((t) => (
+                      <option key={t} value={t}>
+                        {t.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                      </option>
+                    ))}
+                  </select>
                 </label>
-                <div className="field-grid">
-                  <label className="field">
-                    <span>Difficulty</span>
-                    <select
-                      value={item.difficulty}
-                      onChange={(event) => updateItem(index, "difficulty", Number(event.target.value))}
-                    >
-                      <option value={1}>Level 1</option>
-                      <option value={2}>Level 2</option>
-                      <option value={3}>Level 3</option>
-                    </select>
-                  </label>
-                  <label className="field">
-                    <span>Max points</span>
-                    <input
-                      type="number"
-                      min="1"
-                      value={item.max_points}
-                      onChange={(event) => updateItem(index, "max_points", Number(event.target.value))}
-                    />
-                  </label>
-                </div>
-                {item.item_type === "test" ? (
-                  <label className="field">
-                    <span>Answer key</span>
-                    <input
-                      value={item.answer_key}
-                      onChange={(event) => updateItem(index, "answer_key", event.target.value)}
-                      required
-                    />
-                  </label>
-                ) : null}
+                <label className="field">
+                  <span>Difficulty</span>
+                  <select
+                    value={rule.difficulty_group}
+                    onChange={(event) => updateRule(index, "difficulty_group", event.target.value)}
+                  >
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                  </select>
+                </label>
+                <label className="field">
+                  <span>Count</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max="50"
+                    value={rule.count}
+                    onChange={(event) => updateRule(index, "count", Math.max(1, Number(event.target.value)))}
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="rule-delete"
+                  title="Remove rule"
+                  onClick={() => removeRule(index)}
+                >
+                  🗑
+                </button>
               </div>
             ))}
           </div>
 
           {error ? <p className="form-error">{error}</p> : null}
 
-          <button type="submit" className="primary-button">
-            Publish homework
+          <button type="submit" className="primary-button" disabled={generating}>
+            {generating ? "Generating…" : "Generate homework"}
           </button>
         </form>
+      ) : null}
+
+      {preview ? (
+        <div className="panel stack">
+          <div>
+            <span className="eyebrow">Generated preview</span>
+            <h2>{preview.title}</h2>
+            <p className="muted-copy">
+              {preview.tasks_preview.length} tasks selected · max score {preview.max_score} · assigned to {preview.assignment_count} student(s)
+            </p>
+          </div>
+          <div className="preview-grid">
+            {preview.tasks_preview.map((task) => (
+              <article className="preview-card" key={task.id}>
+                <h3>{task.title}</h3>
+                <p>{task.body}</p>
+                <div className="preview-card__meta">
+                  <span className="tag tag--info">{task.topic.replace(/_/g, " ")}</span>
+                  <span className="tag tag--muted">Difficulty {task.difficulty}</span>
+                  <span className="tag tag--success">{task.task_type}</span>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
       ) : null}
 
       <div className="homework-grid">

@@ -80,6 +80,20 @@ def list_tasks(
     return [serialize_task(task) for task in tasks]
 
 
+@router.get("/topics")
+def list_topics(db: Session = Depends(get_db), teacher: User = Depends(require_teacher)):
+    """Return distinct topic slugs from the active task bank."""
+    _ = teacher
+    rows = (
+        db.query(Task.topic)
+        .filter(Task.is_archived.is_(False))
+        .distinct()
+        .order_by(Task.topic.asc())
+        .all()
+    )
+    return [row[0] for row in rows]
+
+
 @router.patch("/tasks/{task_id}", response_model=TaskOut)
 def update_task(
     task_id: int,

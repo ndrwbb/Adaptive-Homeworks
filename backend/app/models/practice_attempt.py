@@ -13,7 +13,7 @@ class PracticeAttempt(Base):
     user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
     external_user_key: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
     task_id: Mapped[int] = mapped_column(ForeignKey("tasks.id"), index=True)
-    topic: Mapped[str] = mapped_column(String(100), index=True)
+    topic: Mapped[str] = mapped_column(ForeignKey("topics.topic_id"), index=True)
     answer: Mapped[str] = mapped_column(Text)
     expected_answer: Mapped[str | None] = mapped_column(String(255), nullable=True)
     is_correct: Mapped[bool] = mapped_column(Boolean, default=False, index=True)

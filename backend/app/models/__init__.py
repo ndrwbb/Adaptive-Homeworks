@@ -7,6 +7,7 @@ from app.models.learner_topic_state import LearnerTopicState
 from app.models.practice_attempt import PracticeAttempt
 from app.models.submission import Submission
 from app.models.task import Task
+from app.models.topic import Topic
 from app.models.user import User
 
 __all__ = [
@@ -19,5 +20,6 @@ __all__ = [
     "PracticeAttempt",
     "Submission",
     "Task",
+    "Topic",
     "User",
 ]

@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, require_student, require_teacher
@@ -9,10 +10,14 @@ from app.models.homework import Homework
 from app.models.homework_assignment import HomeworkAssignment
 from app.models.homework_item import HomeworkItem
 from app.models.homework_submission import HomeworkSubmission
+from app.models.task import Task
 from app.models.user import User
 from app.schemas.homework import (
+    GeneratedHomeworkOut,
+    GeneratedTaskPreview,
     HomeworkCreateIn,
     HomeworkDetailOut,
+    HomeworkGenerateIn,
     HomeworkItemOut,
     HomeworkSubmissionIn,
     HomeworkSubmissionOut,
@@ -300,3 +305,115 @@ def create_homework(data: HomeworkCreateIn, db: Session = Depends(get_db), teach
         max_score=homework.max_score,
         items=[serialize_item(item) for item in created_items],
     )
+
+
+DIFFICULTY_MAP = {
+    "easy": (1, 2),
+    "medium": (3, 3),
+    "hard": (4, 5),
+}
+
+
+@router.post("/teacher/homeworks/generate", response_model=GeneratedHomeworkOut, status_code=status.HTTP_201_CREATED)
+def generate_homework(data: HomeworkGenerateIn, db: Session = Depends(get_db), teacher: User = Depends(require_teacher)):
+    """Rule-based homework generator: selects random tasks from the bank by topic & difficulty."""
+
+    # Validate students
+    if len(set(data.student_ids)) != len(data.student_ids):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Student IDs must be unique")
+    assignees = db.query(User).filter(User.id.in_(data.student_ids), User.role == "student").all()
+    if len(assignees) != len(set(data.student_ids)):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="All student_ids must be existing students")
+
+    # Select tasks by rules
+    selected_tasks: list[Task] = []
+    for rule in data.rules:
+        lo, hi = DIFFICULTY_MAP[rule.difficulty_group]
+        tasks = (
+            db.query(Task)
+            .filter(
+                Task.topic == rule.topic,
+                Task.difficulty >= lo,
+                Task.difficulty <= hi,
+                Task.is_archived.is_(False),
+            )
+            .order_by(func.random())
+            .limit(rule.count)
+            .all()
+        )
+        selected_tasks.extend(tasks)
+
+    if not selected_tasks:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="No matching tasks found for the given rules. Check that topics and difficulties exist in the task bank.",
+        )
+
+    # Create homework
+    max_score = sum(max(1, task.difficulty) for task in selected_tasks)
+    has_manual = any(task.task_type == "manual" for task in selected_tasks)
+    homework = Homework(
+        title=data.title.strip(),
+        subject=data.subject.strip(),
+        description=data.description.strip() if data.description else "",
+        teacher_id=teacher.id,
+        deadline=data.deadline,
+        max_score=max_score,
+        requires_manual_review=has_manual,
+    )
+    db.add(homework)
+    db.flush()
+
+    # Create homework items from selected tasks
+    created_items: list[HomeworkItem] = []
+    for task in selected_tasks:
+        item_type = "test" if task.answer_key else "manual"
+        item = HomeworkItem(
+            homework_id=homework.id,
+            title=task.title,
+            prompt=task.body,
+            item_type=item_type,
+            difficulty=task.difficulty,
+            max_points=max(1, task.difficulty),
+            answer_key=task.answer_key,
+        )
+        db.add(item)
+        db.flush()
+        created_items.append(item)
+
+    # Create assignments
+    for student_id in data.student_ids:
+        assignment = HomeworkAssignment(
+            homework_id=homework.id,
+            student_id=student_id,
+            status="not_started",
+        )
+        db.add(assignment)
+
+    db.commit()
+
+    assignment_count = len(data.student_ids)
+    tasks_preview = [
+        GeneratedTaskPreview(
+            id=task.id,
+            title=task.title,
+            body=task.body,
+            topic=task.topic,
+            difficulty=task.difficulty,
+            answer_key=task.answer_key,
+            task_type=task.task_type,
+        )
+        for task in selected_tasks
+    ]
+
+    return GeneratedHomeworkOut(
+        homework_id=homework.id,
+        title=homework.title,
+        subject=homework.subject,
+        deadline=homework.deadline.isoformat(),
+        assignment_count=assignment_count,
+        max_score=homework.max_score,
+        items=[serialize_item(item) for item in created_items],
+        tasks_preview=tasks_preview,
+    )
+

@@ -106,3 +106,39 @@ class ManualReviewOut(BaseModel):
     review_status: str
     assignment_status: str
     assignment_final_score: int | None
+
+
+class HomeworkGenerateRuleIn(BaseModel):
+    topic: str = Field(min_length=1, max_length=100)
+    difficulty_group: Literal["easy", "medium", "hard"]
+    count: int = Field(ge=1, le=50)
+
+
+class HomeworkGenerateIn(BaseModel):
+    title: str = Field(min_length=3, max_length=255)
+    subject: str = Field(min_length=2, max_length=120)
+    description: str = Field(default="", max_length=2000)
+    deadline: datetime
+    student_ids: list[int] = Field(min_length=1)
+    rules: list[HomeworkGenerateRuleIn] = Field(min_length=1)
+
+
+class GeneratedTaskPreview(BaseModel):
+    id: int
+    title: str
+    body: str
+    topic: str
+    difficulty: int
+    answer_key: str | None = None
+    task_type: str
+
+
+class GeneratedHomeworkOut(BaseModel):
+    homework_id: int
+    title: str
+    subject: str
+    deadline: str
+    assignment_count: int
+    max_score: int
+    items: list[HomeworkItemOut]
+    tasks_preview: list[GeneratedTaskPreview]

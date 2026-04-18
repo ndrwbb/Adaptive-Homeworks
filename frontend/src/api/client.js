@@ -105,3 +105,13 @@ export async function fetchTeacherStudentProgress(token, studentId) {
   const { data } = await api.get(`/teacher/students/${studentId}/progress`, authConfig(token));
   return data;
 }
+
+export async function generateTeacherHomework(token, payload) {
+  const { data } = await api.post("/teacher/homeworks/generate", payload, authConfig(token));
+  return data;
+}
+
+export async function fetchTeacherTopics(token) {
+  const { data } = await api.get("/teacher/topics", authConfig(token));
+  return data;
+}

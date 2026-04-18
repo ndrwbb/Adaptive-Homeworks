@@ -17,9 +17,9 @@ export default function Login() {
 
     try {
       const nextSession = await login(form);
-      const fallbackPath = nextSession.user.role === "teacher" ? "/teacher" : "/student";
       startTransition(() => {
-        navigate(location.state?.from || fallbackPath);
+        const dest = location.state?.from && location.state.from !== '/' ? location.state.from : "/dashboard";
+        navigate(dest);
       });
     } catch {
       setError("Login failed. Check the demo credentials or backend availability.");

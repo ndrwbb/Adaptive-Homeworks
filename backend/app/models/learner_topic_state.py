@@ -16,7 +16,7 @@ class LearnerTopicState(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
     external_user_key: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
-    topic: Mapped[str] = mapped_column(String(100), index=True)
+    topic: Mapped[str] = mapped_column(ForeignKey("topics.topic_id"), index=True)
     skill_score: Mapped[int] = mapped_column(Integer, default=50)
     current_difficulty: Mapped[int] = mapped_column(Integer, default=1)
     attempts_count: Mapped[int] = mapped_column(Integer, default=0)

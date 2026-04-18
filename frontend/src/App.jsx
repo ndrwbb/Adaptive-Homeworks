@@ -11,6 +11,7 @@ import ProgressPage from "./pages/ProgressPage";
 import Register from "./pages/Register";
 import SelfEducationPage from "./pages/SelfEducationPage";
 import StudentAnalytics from "./pages/StudentAnalytics";
+import DashboardRouter from "./components/DashboardRouter";
 import StudentDashboard from "./pages/StudentDashboard";
 import TaskManager from "./pages/TaskManager";
 import TeacherDashboard from "./pages/TeacherDashboard";
@@ -25,14 +26,7 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route
-              path="/student"
-              element={
-                <RoleRoute role="student">
-                  <StudentDashboard />
-                </RoleRoute>
-              }
-            />
+            <Route path="/dashboard" element={<DashboardRouter />} />
             <Route
               path="/student/homeworks"
               element={
@@ -65,14 +59,7 @@ export default function App() {
                 </RoleRoute>
               }
             />
-            <Route
-              path="/teacher"
-              element={
-                <RoleRoute role="teacher">
-                  <TeacherDashboard />
-                </RoleRoute>
-              }
-            />
+
             <Route
               path="/teacher/tasks"
               element={

@@ -1,6 +1,13 @@
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
+import { useAppContext } from "../context/AppContext";
 
 export default function Home() {
+  const { session } = useAppContext();
+
+  if (session) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return (
     <section className="stack">
       <div className="hero-card hero-card--landing">

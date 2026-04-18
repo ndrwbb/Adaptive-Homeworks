@@ -612,6 +612,68 @@ textarea {
   font-size: 1.08rem;
 }
 
+.rule-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 100px 44px;
+  gap: 12px;
+  align-items: end;
+}
+
+.rule-row .field select,
+.rule-row .field input {
+  min-height: 48px;
+}
+
+.rule-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 48px;
+  border: 1px solid rgba(143, 63, 63, 0.2);
+  border-radius: var(--radius-md);
+  background: rgba(143, 63, 63, 0.06);
+  color: var(--danger);
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: 180ms ease;
+}
+
+.rule-delete:hover {
+  background: rgba(143, 63, 63, 0.16);
+}
+
+.preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.preview-card {
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(25, 33, 45, 0.08);
+}
+
+.preview-card h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.preview-card p {
+  color: var(--muted);
+  margin: 0 0 12px;
+  font-size: 0.94rem;
+}
+
+.preview-card__meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .toast {
   position: fixed;
   right: 24px;
@@ -660,7 +722,8 @@ textarea {
   .student-grid,
   .field-grid,
   .homework-grid,
-  .checkbox-grid {
+  .checkbox-grid,
+  .rule-row {
     grid-template-columns: 1fr;
   }
 
