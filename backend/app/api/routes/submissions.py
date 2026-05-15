@@ -7,6 +7,7 @@ from app.models.submission import Submission
 from app.models.task import Task
 from app.models.user import User
 from app.schemas.submission import SubmissionIn, SubmissionOut
+from app.services.answer_checker import check_answer
 
 router = APIRouter(prefix="/submissions", tags=["submissions"])
 
@@ -23,7 +24,7 @@ def submit(data: SubmissionIn, db: Session = Depends(get_db), user: User = Depen
 
     answer = data.answer.strip()
     if task.answer_key:
-        is_correct = normalize_answer(answer) == normalize_answer(task.answer_key)
+        is_correct = check_answer(answer, task.answer_key)
     elif data.is_correct is not None:
         is_correct = data.is_correct
     else:
