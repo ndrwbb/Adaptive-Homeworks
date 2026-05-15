@@ -83,3 +83,26 @@ class TeacherHomeworkOut(BaseModel):
     max_score: int
     items: list[HomeworkItemOut]
 
+
+class ManualReviewIn(BaseModel):
+    awarded_points: int = Field(ge=0)
+    comment: str | None = None
+
+
+class PendingSubmissionOut(BaseModel):
+    submission_id: int
+    assignment_id: int
+    student_name: str
+    item_title: str
+    item_prompt: str
+    answer: str
+    max_points: int
+    review_status: str
+
+
+class ManualReviewOut(BaseModel):
+    submission_id: int
+    awarded_points: int
+    review_status: str
+    assignment_status: str
+    assignment_final_score: int | None

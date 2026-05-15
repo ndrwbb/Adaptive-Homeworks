@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, require_student, require_teacher
+from app.services.answer_checker import check_answer
 from app.models.homework import Homework
 from app.models.homework_assignment import HomeworkAssignment
 from app.models.homework_item import HomeworkItem
@@ -34,8 +35,6 @@ def serialize_item(item: HomeworkItem) -> HomeworkItemOut:
     )
 
 
-def normalize_answer(answer: str) -> str:
-    return " ".join(answer.strip().lower().split())
 
 
 def compute_assignment_status(
@@ -177,7 +176,7 @@ def submit_homework_item(
         .first()
     )
     if item.item_type == "test":
-        is_correct = normalize_answer(data.answer) == normalize_answer(item.answer_key or "")
+        is_correct = check_answer(data.answer, item.answer_key or "")
         awarded_points = item.max_points if is_correct else 0
         review_status = "reviewed"
     else:
